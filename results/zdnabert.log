@@ -1,0 +1,4 @@
+device: mps
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]
+Loading weights: 100%|██████████| 199/199 [00:00<00:00, 56233.01it/s]
+Z-DNABERT regions (p>0.5, len>10): 13375 -> results/zdnabert.bed

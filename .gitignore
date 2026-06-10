@@ -1,0 +1,32 @@
+# Raw NCBI download package (regenerated from the accession; see README §6)
+data/caur_package/
+data/caur_package.zip
+
+# Files larger than GitHub's 100 MB limit are committed gzipped instead.
+# gunzip them before re-running the scripts (see README §6).
+data/genome.fna
+data/annotation.gff
+data/cds.fna
+
+# HMMER pressed binary indices (regenerate with `hmmpress`)
+hmm/*.h3f
+hmm/*.h3i
+hmm/*.h3m
+hmm/*.h3p
+
+# Per-chromosome intermediate
+results/zhunt_chr1.bed
+
+# Compiled Z-Hunt binary (rebuild: gcc tools/zhunt-reference.c -O2 -o tools/zhunt_c -lm)
+tools/zhunt_c
+
+# Python venv for the ML stack (torch/transformers); recreate per README §6
+.venv/
+
+# Z-DNABERT weights (354 MB > GitHub limit); download from Google Drive, see README §6
+models/zdnabert/6-new-12w-0/pytorch_model.bin
+
+# OS / Python cruft
+.DS_Store
+__pycache__/
+*.pyc

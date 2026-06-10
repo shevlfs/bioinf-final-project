@@ -1,0 +1,7 @@
+Region	N_structures	Fraction	Background_bp_fraction	Enrichment
+Exon	519	0.1055	0.1879	0.56
+Intron	2946	0.5990	0.4629	1.29
+Promoter	324	0.0659	0.1037	0.64
+Downstream	40	0.0081	0.0188	0.43
+Intergenic	1089	0.2214	0.2267	0.98
+TOTAL	4918	1.0000	1.0000	-

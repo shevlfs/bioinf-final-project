@@ -1,0 +1,28 @@
+| Pfam | Family | Category | n genes | Example gene | Coordinates | E-value |
+|------|--------|----------|--------:|--------------|-------------|---------|
+| PF00145 | DNA_methylase | DNA methylation | 1 | CAUJ4_LOCUS8523 | CAJGYM020000004.1:7384415-7386554(-) | 9e-44 |
+| PF12047 | DNMT1-RFD | DNA methylation | 0 | — | — | — |
+| PF02008 | zf-CXXC | DNA methylation | 1 | CAUJ4_LOCUS6682 | CAJGYM020000003.1:11566140-11568680(-) | 1e-15 |
+| PF01429 | MBD | DNA methylation read | 2 | CAUJ4_LOCUS7549 | CAJGYM020000003.1:18689295-18696356(-) | 2e-19 |
+| PF12851 | Tet_JBP | DNA modification | 0 | — | — | — |
+| PF00125 | Histone | Histone fold | 29 | CAUJ4_LOCUS5957 | CAJGYM020000003.1:7811358-7811871(+) | 5e-39 |
+| PF00538 | Linker_histone | Histone fold | 2 | CAUJ4_LOCUS7428 | CAJGYM020000003.1:17871622-17872536(+) | 5e-31 |
+| PF00856 | SET | Histone write (methyl) | 25 | CAUJ4_LOCUS3706 | CAJGYM020000002.1:8972070-8975227(+) | 9e-27 |
+| PF05033 | Pre-SET | Histone write (methyl) | 2 | CAUJ4_LOCUS7449 | CAJGYM020000003.1:18023212-18035018(-) | 1e-16 |
+| PF01853 | MOZ_SAS | Histone write (acetyl) | 6 | CAUJ4_LOCUS12038 | CAJGYM020000005.1:10589978-10594008(-) | 2e-82 |
+| PF00583 | Acetyltransf_1 | Histone write (acetyl) | 30 | CAUJ4_LOCUS12077 | CAJGYM020000005.1:10752817-10755962(-) | 2e-21 |
+| PF08214 | HAT_KAT11 | Histone write (acetyl) | 1 | CAUJ4_LOCUS6454 | CAJGYM020000003.1:10468719-10482099(+) | 3e-64 |
+| PF00850 | Hist_deacetyl | Histone erase (deacetyl) | 9 | CAUJ4_LOCUS776 | CAJGYM020000001.1:7539332-7542321(+) | 3e-90 |
+| PF02146 | SIR2 | Histone erase (deacetyl) | 4 | CAUJ4_LOCUS9578 | CAJGYM020000004.1:12851386-12856837(+) | 1e-65 |
+| PF02373 | JmjC | Histone erase (demethyl) | 7 | CAUJ4_LOCUS7669 | CAJGYM020000004.1:560945-580136(-) | 3e-41 |
+| PF02375 | JmjN | Histone erase (demethyl) | 2 | CAUJ4_LOCUS7669 | CAJGYM020000004.1:560945-580136(-) | 6e-15 |
+| PF01593 | Amino_oxidase | Histone erase (demethyl) | 10 | CAUJ4_LOCUS614 | CAJGYM020000001.1:6547484-6555393(+) | 7e-70 |
+| PF00628 | PHD | Histone read | 21 | CAUJ4_LOCUS4874 | CAJGYM020000002.1:17612649-17629295(+) | 1e-19 |
+| PF00439 | Bromodomain | Histone read | 15 | CAUJ4_LOCUS930 | CAJGYM020000001.1:8609816-8631023(-) | 9e-102 |
+| PF00385 | Chromo | Histone read | 13 | CAUJ4_LOCUS13687 | CAJGYM020000006.1:4826609-4832140(+) | 2e-38 |
+| PF00855 | PWWP | Histone read | 1 | CAUJ4_LOCUS1552 | CAJGYM020000001.1:13130063-13135482(+) | 3e-16 |
+| PF00567 | Tudor | Histone read | 11 | CAUJ4_LOCUS3266 | CAJGYM020000002.1:6738331-6742652(-) | 3e-25 |
+| PF01426 | BAH | Histone read | 3 | CAUJ4_LOCUS930 | CAJGYM020000001.1:8609816-8631023(-) | 8e-34 |
+| PF00176 | SNF2_N | Chromatin remodeling | 16 | CAUJ4_LOCUS7272 | CAJGYM020000003.1:16077121-16096379(+) | 1e-107 |
+| PF02463 | SMC_N | Cohesin/SMC | 8 | CAUJ4_LOCUS5632 | CAJGYM020000003.1:5445890-5463321(+) | 1e-70 |
+| PF04825 | Rad21_Rec8 | Cohesin | 3 | CAUJ4_LOCUS13968 | CAJGYM020000006.1:6763387-6779857(-) | 1e-40 |

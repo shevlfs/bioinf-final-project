@@ -1,0 +1,27 @@
+pfam	name	category	description
+PF00145	DNA_methylase	DNA methylation	C-5 cytosine-specific DNA methyltransferase (DNMT1/3/2)
+PF12047	DNMT1-RFD	DNA methylation	DNMT1 replication foci targeting domain
+PF02008	zf-CXXC	DNA methylation	CXXC zinc finger, binds unmethylated CpG (CXXC1, TET, MLL)
+PF01429	MBD	DNA methylation read	Methyl-CpG binding domain (MeCP2, MBD1-4)
+PF12851	Tet_JBP	DNA modification	TET/JBP 2OG-Fe(II) dioxygenase, 5mC oxidation
+PF00125	Histone	Histone fold	Core histone fold (H2A/H2B/H3/H4)
+PF00538	Linker_histone	Histone fold	Linker histone H1/H5
+PF00856	SET	Histone write (methyl)	SET domain histone lysine methyltransferase
+PF05033	Pre-SET	Histone write (methyl)	Pre-SET zinc-binding region
+PF01853	MOZ_SAS	Histone write (acetyl)	MYST-family histone acetyltransferase (KAT6/7/8)
+PF00583	Acetyltransf_1	Histone write (acetyl)	GNAT acetyltransferase (GCN5/KAT2, HAT1)
+PF08214	HAT_KAT11	Histone write (acetyl)	p300/CBP histone acetyltransferase domain
+PF00850	Hist_deacetyl	Histone erase (deacetyl)	Histone deacetylase, class I/II (HDAC)
+PF02146	SIR2	Histone erase (deacetyl)	Sirtuin, NAD-dependent deacetylase (class III)
+PF02373	JmjC	Histone erase (demethyl)	Jumonji-C histone demethylase
+PF02375	JmjN	Histone erase (demethyl)	Jumonji-N domain
+PF01593	Amino_oxidase	Histone erase (demethyl)	Flavin amine oxidase (LSD1/KDM1 demethylase)
+PF00628	PHD	Histone read	PHD finger
+PF00439	Bromodomain	Histone read	Bromodomain (acetyl-lysine reader)
+PF00385	Chromo	Histone read	Chromodomain (methyl-lysine reader)
+PF00855	PWWP	Histone read	PWWP methyl-lysine reader
+PF00567	Tudor	Histone read	Tudor domain (methyl reader)
+PF01426	BAH	Histone read	Bromo-adjacent homology domain
+PF00176	SNF2_N	Chromatin remodeling	SNF2 family helicase ATPase (SWI/SNF, ISWI, CHD)
+PF02463	SMC_N	Cohesin/SMC	SMC ATPase N-terminal (SMC1/3, condensin)
+PF04825	Rad21_Rec8	Cohesin	RAD21/REC8 cohesin kleisin subunit

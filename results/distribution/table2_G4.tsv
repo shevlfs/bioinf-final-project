@@ -1,0 +1,6 @@
+Region	N_regions	N_regions_with_structure	Fraction_regions_with_structure
+Exon	169476	172	0.0010
+Intron	154089	2125	0.0138
+Promoter	13497	280	0.0207
+Downstream	10797	40	0.0037
+Intergenic	8305	650	0.0783
