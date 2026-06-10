@@ -1,13 +1,4 @@
 #!/usr/bin/env python3
-"""Find putative G-quadruplex sequences (PQS) on both strands.
-
-Pattern (from project brief): (G{3,5}[ATGC]{1,7}){3,}G{3,5}
-  - searched case-insensitively on both strands
-  - '+' strand: G-rich pattern directly
-  - '-' strand: the same motif on the complementary strand appears as the
-    C-rich pattern (C{3,5}[ATGC]{1,7}){3,}C{3,5} on the (+) reference sequence.
-Output: BED6 (results/quadruplexes.bed)  start is 0-based.
-"""
 import re, sys
 
 GENOME = "data/genome.fna"

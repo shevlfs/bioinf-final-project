@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
-"""Emit markdown tables for the README from the result TSVs."""
 import csv, os
 
 os.makedirs("results/markdown", exist_ok=True)
 
-# ---------- epigenetics: family summary (all 26) ----------
 rows = list(csv.DictReader(open("results/epigenetic_summary.tsv"), delimiter="\t"))
-# best representative gene per family
 best = {}
 for r in csv.DictReader(open("results/epigenetic_genes.tsv"), delimiter="\t"):
     pf = r["family_pfam"]
@@ -27,15 +24,12 @@ with open("results/markdown/epigenetic_families.md", "w") as o:
             o.write(f"| {pf} | {r['family_name']} | {r['category']} | {r['n_genes']} | "
                     f"— | — | — |\n")
 
-# ---------- required format: family -> gene -> coords (one per gene) ----------
 with open("results/markdown/epigenetic_genes_full.md", "w") as o:
     o.write("| Checked family | Gene (locus_tag) | Gene coordinates |\n")
     o.write("|----------------|------------------|------------------|\n")
     for r in csv.DictReader(open("results/epigenetic_genes.tsv"), delimiter="\t"):
         o.write(f"| {r['family_name']} ({r['family_pfam']}) | {r['gene_locus_tag']} | {r['coordinates']} |\n")
 
-# ---------- distribution tables (Quadruplexes, Z-Hunt, and Z-DNABERT if present) ----------
-# (label_in_files, display name)
 STRUCTS = [("G4", "Quadruplexes"), ("Zhunt", "Z-Hunt")]
 if os.path.exists("results/distribution/table1_ZDNABERT.tsv"):
     STRUCTS.append(("ZDNABERT", "Z-DNABERT"))

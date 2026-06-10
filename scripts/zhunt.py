@@ -1,41 +1,20 @@
 #!/usr/bin/env python3
-"""Pure-Python / NumPy port of the Z-HUNT-II algorithm (Ho et al., EMBO J 1986;
-reference C source: Chou & Ho; Fedorov 2023 update).
-
-Predicts the propensity of every position to flip into left-handed Z-DNA and
-reports a Z-Hunt "z-score" (≈ number of random sequences one must search to find
-one as Z-prone). Z-DNA sites are positions with z-score above a cutoff
-(project default: > 400).
-
-This is an independent re-implementation (no external binary is run). It is
-validated internally: --selftest checks the vectorised engine against a slow
-scalar transliteration of the C code on random sequences.
-
-Parallelised across genome chunks with multiprocessing (all cores).
-
-Usage:
-    python3 scripts/zhunt.py --selftest
-    python3 scripts/zhunt.py --genome data/genome.fna --out results/zhunt.bed \
-            --mindin 6 --maxdin 12 --threshold 400 --procs 14
-"""
 import argparse, os, sys
 import numpy as np
 from multiprocessing import Pool
 
-# ---- constants (from the reference C source) ----
 RT = 0.59004
-A0 = 0.357                      # 2*(1/10.5 + 1/12)
+A0 = 0.357
 B = 0.4
-A_HALF = A0 / 2.0              # used for deltatwist (a /= 2 in calculate_zscore)
-K_RT = -0.2521201             # -1100/4363
-SIGMA = 16.94800353          # 10/RT
+A_HALF = A0 / 2.0
+K_RT = -0.2521201
+SIGMA = 16.94800353
 EXPLIMIT = -600.0
 AVG = 29.6537135
 STDV = 2.71997
 _SQRT2 = 0.70710678118654752440
 _SQRTPI = 0.564189583546
 
-# Delta-BZ energy of dinucleotide; rows: AS-AS, SA-SA, AS-SA, SA-AS; 17 dinuc cols
 DBZED = np.array([
  [4.40,6.20,3.40,5.20,2.50,4.40,1.40,3.30,3.30,5.20,2.40,4.20,1.40,3.40,0.66,2.40,4.26],
  [4.40,2.50,3.30,1.40,6.20,4.40,5.20,3.40,3.40,1.40,2.40,0.66,5.20,3.30,4.20,2.40,4.26],
@@ -45,17 +24,14 @@ DBZED = np.array([
 EXPDBZED = np.exp(-DBZED / RT)
 
 def bztwist_arr(n):
-    # ab starts at b+b=0.8 then += A0 each dinucleotide -> 0.8 + A0*(i+1)
     return 0.8 + A0 * np.arange(1, n + 1, dtype=np.float64)
 
-# base code: a=0 t=1 g=2 c=3 ; anything else (n) -> 4
 _LUT = np.full(256, 4, dtype=np.int8)
 for _ch, _co in (("a", 0), ("t", 1), ("g", 2), ("c", 3)):
     _LUT[ord(_ch)] = _co
     _LUT[ord(_ch.upper())] = _co
 
 def seq_to_dinuc_index(seq_bytes):
-    """bytes -> int array of dinucleotide indices (length len-1), values 0..16."""
     codes = _LUT[np.frombuffer(seq_bytes, dtype=np.uint8)].astype(np.int64)
     b1 = codes[:-1]; b2 = codes[1:]
     idx = b1 * 4 + b2
@@ -63,7 +39,6 @@ def seq_to_dinuc_index(seq_bytes):
     return idx
 
 def assign_probability_vec(dl):
-    """Vectorised port of assign_probability(): dl array -> z-score array."""
     z = np.abs(dl - AVG) / STDV
     x = z * _SQRT2
     y = _SQRTPI * np.exp(-x * x)
@@ -71,7 +46,6 @@ def assign_probability_vec(dl):
     s = np.zeros_like(dl)
     xk = x.copy()
     k = 1.0
-    # do { sum+=x; k+=2; x*=z2/k } while (sum+x > sum)
     for _ in range(600):
         s_new = s + xk
         k += 2.0
@@ -80,38 +54,30 @@ def assign_probability_vec(dl):
             s = s_new
             break
         s = s_new
-    tail = 0.5 - y * s            # probability of each tail
+    tail = 0.5 - y * s
     return np.where(dl > AVG, tail, 1.0 / tail)
 
-# -------------------- vectorised engine --------------------
 def zhunt_scores(dinuc_idx, nstart, mindin, maxdin):
-    """Return z-score array of length nstart (window starts 0..nstart-1).
-    dinuc_idx must extend to at least nstart-1 + 2*(maxdin-1)."""
     bestdl = np.full(nstart, 50.0, dtype=np.float64)
     for din in range(mindin, maxdin + 1):
-        # idx_k[s] = dinuc_idx[s + 2k]
-        # ---- Viterbi: min-energy anti/syn path, with backpointers ----
         idx0 = dinuc_idx[0:nstart]
         vAS = DBZED[0][idx0].copy()
         vSA = DBZED[1][idx0].copy()
-        bp_to_AS = np.empty((din, nstart), dtype=np.int8)  # prev state for AS at step k
+        bp_to_AS = np.empty((din, nstart), dtype=np.int8)
         bp_to_SA = np.empty((din, nstart), dtype=np.int8)
         for k in range(1, din):
             idxk = dinuc_idx[2 * k: 2 * k + nstart]
-            # new AS from AS(row0) or SA(row3)
             cAS_fromAS = vAS + DBZED[0][idxk]
             cAS_fromSA = vSA + DBZED[3][idxk]
-            from_AS = cAS_fromAS <= cAS_fromSA            # prefer AS on ties
+            from_AS = cAS_fromAS <= cAS_fromSA
             nvAS = np.where(from_AS, cAS_fromAS, cAS_fromSA)
             bp_to_AS[k] = np.where(from_AS, 0, 1)
-            # new SA from SA(row1) or AS(row2)
             cSA_fromSA = vSA + DBZED[1][idxk]
             cSA_fromAS = vAS + DBZED[2][idxk]
             from_SA = cSA_fromSA <= cSA_fromAS
             nvSA = np.where(from_SA, cSA_fromSA, cSA_fromAS)
             bp_to_SA[k] = np.where(from_SA, 1, 0)
             vAS, vSA = nvAS, nvSA
-        # backtrack to get state at each k (0=AS,1=SA)
         states = np.empty((din, nstart), dtype=np.int8)
         cur = np.where(vAS <= vSA, 0, 1).astype(np.int8)
         states[din - 1] = cur
@@ -119,19 +85,15 @@ def zhunt_scores(dinuc_idx, nstart, mindin, maxdin):
             prev = np.where(cur == 0, bp_to_AS[k], bp_to_SA[k])
             states[k - 1] = prev
             cur = prev
-        # best_bzenergy[k] = EXPDBZED[row][idxk] along optimal path
         BE = np.empty((din, nstart), dtype=np.float64)
-        # k = 0: row 0 if AS else 1
         BE[0] = EXPDBZED[np.where(states[0] == 0, 0, 1), dinuc_idx[0:nstart]]
         for k in range(1, din):
             idxk = dinuc_idx[2 * k: 2 * k + nstart]
             curk = states[k]; prevk = states[k - 1]
-            # cur AS: row 0 if prev AS else 3 ; cur SA: row 1 if prev SA else 2
             row = np.where(curk == 0,
                            np.where(prevk == 0, 0, 3),
                            np.where(prevk == 1, 1, 2)).astype(np.int8)
             BE[k] = EXPDBZED[row, idxk]
-        # ---- logcoef[i] = log( sum_j prod_{m=0..i} BE[j+m] ) ----
         logcoef = np.empty((din, nstart), dtype=np.float64)
         prod = np.ones((din, nstart), dtype=np.float64)
         for i in range(din):
@@ -140,12 +102,11 @@ def zhunt_scores(dinuc_idx, nstart, mindin, maxdin):
                 prod[j] *= BE[i + j]
                 sumv += prod[j]
             logcoef[i] = np.log(sumv)
-        # ---- root-find dl in [10,50] where delta_linking(dl)=0 ----
-        bzt = bztwist_arr(din)[:, None]            # (din,1)
+        bzt = bztwist_arr(din)[:, None]
         deltatwist = A_HALF * din
 
         def delta_linking(dl_arr):
-            z = dl_arr[None, :] - bzt               # (din,nstart)
+            z = dl_arr[None, :] - bzt
             expo = logcoef + K_RT * z * z
             mn = expo.min(axis=0)
             expmini = np.where(mn < EXPLIMIT, EXPLIMIT - mn, 0.0)
@@ -159,7 +120,7 @@ def zhunt_scores(dinuc_idx, nstart, mindin, maxdin):
         bracketed = (f1 * f2 < 0.0)
         x = np.where(f1 < 0.0, 10.0, 50.0)
         dx = np.where(f1 < 0.0, 40.0, -40.0)
-        for _ in range(16):                         # |dx| 40 -> <0.001
+        for _ in range(16):
             dx *= 0.5
             xmid = x + dx
             fmid = delta_linking(xmid)
@@ -168,12 +129,8 @@ def zhunt_scores(dinuc_idx, nstart, mindin, maxdin):
         np.minimum(bestdl, dl_din, out=bestdl)
     return assign_probability_vec(bestdl)
 
-# -------------------- slow scalar reference (for --selftest) --------------------
 def zhunt_scalar_one(idx, s, din):
-    """delta-linking for one window start s, window size din (mirrors C)."""
-    # Viterbi min-energy path
     NEG = float("inf")
-    # states: 0=AS,1=SA
     vAS = DBZED[0][idx[s]]; vSA = DBZED[1][idx[s]]
     pAS = [0] * din; pSA = [0] * din
     for k in range(1, din):
@@ -242,14 +199,12 @@ def selftest():
     random.seed(12345)
     for trial in range(3):
         seq = "".join(random.choice("ACGT") for _ in range(400))
-        # inject a Z-prone CG tract
         seq = seq[:150] + "CG" * 20 + seq[190:]
         b = seq.encode()
         idx = seq_to_dinuc_index(b)
         mindin, maxdin = 6, 12
         nstart = len(seq) - 2 * maxdin
         zv = zhunt_scores(idx, nstart, mindin, maxdin)
-        # scalar bestdl then convert
         dl_scalar = zhunt_scalar(idx, nstart, mindin, maxdin)
         zs = assign_probability_vec(dl_scalar)
         diff = np.abs(zv - zs)
@@ -259,7 +214,6 @@ def selftest():
         assert diff.max() < 1e-4, "vectorised and scalar disagree!"
     print("SELFTEST PASSED: vectorised engine matches scalar reference.")
 
-# -------------------- genome driver --------------------
 def read_fasta(path):
     name, seq = None, []
     with open(path) as fh:
@@ -307,13 +261,11 @@ def run_genome(genome, out_bed, mindin, maxdin, thr, procs, chunk, only_scaf=Non
             results.append(r)
             sys.stderr.write(f"  chunk {i+1}/{len(jobs)} done\r")
     sys.stderr.write("\n")
-    # gather per-scaffold passing positions
     by_scaf = {}
     for scaf, abs_start, hits, zz in results:
         if hits.size == 0:
             continue
         by_scaf.setdefault(scaf, []).append((abs_start + hits, zz))
-    # merge consecutive passing positions into intervals
     n_regions = 0
     with open(out_bed, "w") as o:
         for scaf in sorted(by_scaf):
@@ -321,7 +273,6 @@ def run_genome(genome, out_bed, mindin, maxdin, thr, procs, chunk, only_scaf=Non
             allz = np.concatenate([z for _, z in by_scaf[scaf]])
             order = np.argsort(allpos)
             allpos = allpos[order]; allz = allz[order]
-            # merge where gap <= 1
             start = allpos[0]; prev = allpos[0]; maxz = allz[0]
             for p, z in zip(allpos[1:], allz[1:]):
                 if p <= prev + 1:

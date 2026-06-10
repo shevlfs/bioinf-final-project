@@ -1,17 +1,4 @@
 #!/usr/bin/env python3
-"""Run the canonical Z-Hunt-II C binary (tools/zhunt_c) genome-wide, in parallel.
-
-The C tool is single-threaded and treats each input as circular, so the genome
-is split into chunks of `core` bp with a right pad of 2*maxdin bp. Only the
-`core` window-start positions are kept (their full window lies inside the chunk,
-so no circular-wrap artifact); chunks run concurrently across all cores.
-
-Output: merged Z-DNA intervals with z-score > threshold (BED6).
-
-Usage:
-    python3 scripts/run_zhunt_c.py --genome data/genome.fna --out results/zhunt.bed \
-        --mindin 6 --maxdin 12 --threshold 400 --procs 14 --chunk 2000000
-"""
 import argparse, os, subprocess, tempfile, sys
 import numpy as np
 from multiprocessing import Pool
@@ -43,7 +30,7 @@ def _work(job):
         zpath = path + ".Z-SCORE"
         z = np.empty(nstart, dtype=np.float64)
         with open(zpath) as fh:
-            next(fh)  # header
+            next(fh)
             for i in range(nstart):
                 z[i] = float(fh.readline().split()[2])
         hits = np.flatnonzero(z > thr)

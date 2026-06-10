@@ -1,21 +1,4 @@
 #!/usr/bin/env python3
-"""Z-DNABERT genome-wide Z-DNA prediction, batched on Apple-Silicon GPU (MPS).
-
-Faithful port of mitiau/Z-DNABERT `ZDNA-prediction.ipynb` (DNABERT-6
-BertForTokenClassification), adapted to:
-  - read a local genome FASTA,
-  - run batched inference on the MPS (or CUDA / CPU) device,
-  - emit a BED of Z-DNA regions.
-
-Pipeline (unchanged from the notebook): overlapping 6-mers -> windows of 512
-tokens, step 512-16 (overlap 16) -> per-token softmax class-1 probability ->
-stitch overlaps -> threshold (0.5) -> connected regions longer than 10 tokens.
-
-Usage:
-  .venv/bin/python scripts/run_zdnabert.py --model-dir models/zdnabert/6-new-12w-0 \
-      --genome data/genome.fna --out results/zdnabert.bed \
-      --threshold 0.5 --min-len 10 --batch 32
-"""
 import argparse, os, sys
 import numpy as np
 
@@ -95,7 +78,6 @@ def main():
         seq = seq.upper()
         kmers = seq2kmer(seq, 6)
         windows = split_seq(kmers, 512, 16)
-        # map each window's kmers -> token ids
         win_ids = [[vocab.get(km, unk) for km in w] for _, w in windows]
         preds = [None] * len(win_ids)
         with torch.no_grad():
@@ -115,13 +97,12 @@ def main():
                 sys.stderr.write(f"  {name}: {min(b0+a.batch,len(win_ids))}/{len(win_ids)} windows\r")
         stitched = stitch_np_seq(preds, pad=16)
         sys.stderr.write("\n")
-        # threshold -> connected regions
         labeled, maxlab = ndimage.label(stitched > a.threshold)
         for lab in range(1, maxlab + 1):
             idx = np.where(labeled == lab)[0]
             if idx.shape[0] > a.min_len:
                 start = int(idx[0])
-                end = int(idx[-1]) + 6           # kmer span -> base end
+                end = int(idx[-1]) + 6
                 score = float(stitched[idx].max())
                 fout.write(f"{name}\t{start}\t{end}\tZDNABERT\t{score:.3f}\t.\n")
                 n_regions += 1

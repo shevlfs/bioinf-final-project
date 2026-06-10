@@ -1,21 +1,4 @@
 #!/usr/bin/env python3
-"""Distribute secondary-structure predictions over genomic features.
-
-Builds a per-base category partition of every scaffold using priority
-  Exon > Intron > Promoter(1000bp up of TSS) > Downstream(200bp) > Intergenic
-then, for each input BED of structures, produces:
-
-  Table 1 (structure-centric): for each category
-      - n structures assigned (by highest-priority overlap)  -> count & fraction
-      - background = fraction of genomic bp in that category  (for comparison)
-      - enrichment = fraction / background
-  Table 2 (region-centric): for each category
-      - number of category regions (maximal runs) total
-      - number of regions containing >=1 structure  -> count & fraction
-
-Usage:
-    python3 scripts/genomic_distribution.py LABEL1=results/quadruplexes.bed [LABEL2=...]
-"""
 import sys, os
 import numpy as np
 
@@ -49,9 +32,8 @@ def scaffold_lengths(path):
     return lens
 
 def build_category_arrays(lens):
-    """Return dict scaffold -> int8 array of category codes (priority painting)."""
-    genes = []      # (scaf, start0, end, strand)
-    exons = []      # (scaf, start0, end)
+    genes = []
+    exons = []
     with open(GFF) as fh:
         for line in fh:
             if line.startswith("#"):
@@ -79,21 +61,20 @@ def build_category_arrays(lens):
         else:
             arr[scaf][s:e] = code
 
-    # paint in increasing priority so higher priority overwrites
-    for scaf, s, e, strand in genes:                 # downstream (lowest of genic-adjacent)
+    for scaf, s, e, strand in genes:
         if strand == "+":
             paint(scaf, e, e + DOWNSTREAM, DOWNSTREAM_C, only_intergenic=True)
         else:
             paint(scaf, s - DOWNSTREAM, s, DOWNSTREAM_C, only_intergenic=True)
-    for scaf, s, e, strand in genes:                 # promoter overwrites downstream/intergenic
+    for scaf, s, e, strand in genes:
         ss, ee = (s - PROMOTER, s) if strand == "+" else (e, e + PROMOTER)
         L = lens[scaf]; ss = max(0, ss); ee = min(L, ee)
         if ss < ee:
             seg = arr[scaf][ss:ee]
             seg[(seg == INTERGENIC) | (seg == DOWNSTREAM_C)] = PROMOTER_C
-    for scaf, s, e, strand in genes:                 # gene body -> intron (overwrites prom/down/inter)
+    for scaf, s, e, strand in genes:
         paint(scaf, s, e, INTRON)
-    for scaf, s, e in exons:                          # exon overwrites intron
+    for scaf, s, e in exons:
         paint(scaf, s, e, EXON)
     return arr
 
@@ -110,10 +91,8 @@ def load_bed(path):
 def distribute(label, bed_path, arr, lens, out_dir):
     iv = load_bed(bed_path)
     total = sum(len(v) for v in iv.values())
-    # structure-centric: assign each structure to highest-priority (min code) category overlapped
     assigned = np.zeros(len(CATS), dtype=np.int64)
     overlap = np.zeros(len(CATS), dtype=np.int64)
-    # region mask of structures per scaffold (for region-centric)
     for scaf, ivs in iv.items():
         a = arr.get(scaf)
         if a is None:
@@ -126,7 +105,6 @@ def distribute(label, bed_path, arr, lens, out_dir):
             assigned[codes.min()] += 1
             for c in codes:
                 overlap[c] += 1
-    # background bp per category
     bg = np.zeros(len(CATS), dtype=np.int64)
     for s, a in arr.items():
         u, c = np.unique(a, return_counts=True)
@@ -134,7 +112,6 @@ def distribute(label, bed_path, arr, lens, out_dir):
             bg[code] += cnt
     genome_bp = bg.sum()
 
-    # region-centric: build structure base-mask per scaffold, count runs of each category
     region_total = np.zeros(len(CATS), dtype=np.int64)
     region_hit = np.zeros(len(CATS), dtype=np.int64)
     for scaf, a in arr.items():
@@ -144,7 +121,6 @@ def distribute(label, bed_path, arr, lens, out_dir):
                 e = mask.size
             if s < mask.size:
                 mask[s:e] = True
-        # find runs where category constant
         change = np.empty(a.shape[0], dtype=bool)
         change[0] = True
         change[1:] = a[1:] != a[:-1]
@@ -153,7 +129,6 @@ def distribute(label, bed_path, arr, lens, out_dir):
         run_ends[:-1] = run_starts[1:]
         run_ends[-1] = a.shape[0]
         run_codes = a[run_starts]
-        # does each run contain a structure base?
         csum = np.concatenate(([0], np.cumsum(mask)))
         run_has = (csum[run_ends] - csum[run_starts]) > 0
         for code in range(len(CATS)):
@@ -161,7 +136,6 @@ def distribute(label, bed_path, arr, lens, out_dir):
             region_total[code] += int(sel.sum())
             region_hit[code] += int((sel & run_has).sum())
 
-    # write tables
     os.makedirs(out_dir, exist_ok=True)
     t1 = os.path.join(out_dir, f"table1_{label}.tsv")
     with open(t1, "w") as o:
@@ -184,7 +158,7 @@ def distribute(label, bed_path, arr, lens, out_dir):
 
 def main():
     if len(sys.argv) < 2:
-        print(__doc__); sys.exit(1)
+        print("usage: genomic_distribution.py LABEL1=file1.bed [LABEL2=file2.bed ...]"); sys.exit(1)
     items = []
     for a in sys.argv[1:]:
         label, path = a.split("=", 1)
@@ -192,7 +166,6 @@ def main():
     lens = scaffold_lengths(GENOME)
     sys.stderr.write("Building genomic feature partition...\n")
     arr = build_category_arrays(lens)
-    # report background once
     bg = np.zeros(len(CATS), dtype=np.int64)
     for s, a in arr.items():
         u, c = np.unique(a, return_counts=True)

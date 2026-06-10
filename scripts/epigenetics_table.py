@@ -1,14 +1,4 @@
 #!/usr/bin/env python3
-"""Map HMMER epigenetic-family hits to genes and build the family->gene table.
-
-Inputs:
-  data/annotation.gff           NCBI GFF3
-  results/hmmer/epi_domtbl.txt  hmmsearch --domtblout (Pfam --cut_ga)
-  hmm/families.tsv              pfam<TAB>name<TAB>category<TAB>description
-Outputs:
-  results/epigenetic_genes.tsv  one row per (family, gene)
-  results/epigenetic_summary.tsv  one row per family with gene counts
-"""
 import csv, re, sys
 from collections import defaultdict
 
@@ -24,17 +14,15 @@ def attrs(col):
             d[k] = v
     return d
 
-# ---- families metadata (hmm NAME -> (pfam, category, description)) ----
-fam_meta = {}          # pfam acc -> row
-name_to_pfam = {}      # hmm NAME -> pfam acc (filled from domtbl 'tname'/acc)
+fam_meta = {}
+name_to_pfam = {}
 with open(FAMILIES) as fh:
     r = csv.DictReader(fh, delimiter="\t")
     for row in r:
         fam_meta[row["pfam"]] = row
 
-# ---- parse GFF: gene coords by locus_tag; protein_id -> locus_tag ----
-gene_info = {}             # locus_tag -> (scaffold, start, end, strand)
-prot2locus = {}           # protein_id -> locus_tag
+gene_info = {}
+prot2locus = {}
 with open(GFF) as fh:
     for line in fh:
         if line.startswith("#"):
@@ -54,10 +42,8 @@ with open(GFF) as fh:
             if pid and lt:
                 prot2locus[pid] = lt
 
-# ---- parse hmmsearch domtblout ----
-# columns: tname tacc tlen qname qacc(pfam) qlen Eval(full) score bias ...
-prot_fam = defaultdict(dict)   # protein -> {pfam: best_evalue}
-fam_name = {}                  # pfam acc -> hmm name
+prot_fam = defaultdict(dict)
+fam_name = {}
 with open(DOMTBL) as fh:
     for line in fh:
         if line.startswith("#"):
@@ -75,20 +61,16 @@ with open(DOMTBL) as fh:
         if prev is None or full_eval < prev:
             prot_fam[prot][pfam] = full_eval
 
-# ---- build family -> gene rows (collapse isoforms to gene/locus_tag) ----
-# best evalue per (pfam, locus_tag)
-fam_gene = defaultdict(dict)   # pfam -> {locus_tag: (best_eval, protein_id)}
+fam_gene = defaultdict(dict)
 for prot, fams in prot_fam.items():
     lt = prot2locus.get(prot)
     if lt is None:
-        # fallback: strip version? keep protein as pseudo-gene
         lt = prot
     for pfam, ev in fams.items():
         cur = fam_gene[pfam].get(lt)
         if cur is None or ev < cur[0]:
             fam_gene[pfam][lt] = (ev, prot)
 
-# ---- write detailed table ----
 import os
 os.makedirs("results", exist_ok=True)
 rows = []
@@ -112,7 +94,6 @@ for pfam, genes in fam_gene.items():
             "best_evalue": f"{ev:.1e}",
         })
 
-# sort by category then family then evalue
 cat_order = {c: i for i, c in enumerate([
     "DNA methylation", "DNA methylation read", "DNA modification",
     "Histone fold", "Histone write (methyl)", "Histone write (acetyl)",
@@ -125,11 +106,9 @@ with open("results/epigenetic_genes.tsv", "w", newline="") as out:
     w.writeheader()
     w.writerows(rows)
 
-# ---- summary per family ----
 with open("results/epigenetic_summary.tsv", "w", newline="") as out:
     w = csv.writer(out, delimiter="\t")
     w.writerow(["family_pfam", "family_name", "category", "description", "n_genes"])
-    # include all curated families, even with 0 hits
     for pfam, meta in fam_meta.items():
         n = len(fam_gene.get(pfam, {}))
         w.writerow([pfam, meta["name"], meta["category"], meta["description"], n])
