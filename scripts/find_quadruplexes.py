@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import re, sys
 
 GENOME = "data/genome.fna"

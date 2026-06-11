@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import argparse, os, subprocess, tempfile, sys
 import numpy as np
 from multiprocessing import Pool

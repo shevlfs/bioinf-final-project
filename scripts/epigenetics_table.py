@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import csv, re, sys
 from collections import defaultdict
 

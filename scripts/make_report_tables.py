@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import csv, os
 
 os.makedirs("results/markdown", exist_ok=True)
